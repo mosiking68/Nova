@@ -1,0 +1,49 @@
+name: Build Nova Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/build-apk.yml'
+      - '*.zip'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Extract Nova
+        run: |
+          unzip -o Nova_Android_v0.9_APK_Build_Package_FIXED.zip -d nova
+
+      - name: Build APK
+        run: |
+          cd nova
+          PROJECT_DIR=$(find . -name settings.gradle -o -name settings.gradle.kts | head -n 1 | xargs dirname)
+          cd "$PROJECT_DIR"
+          gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nova-Android-APK-v0.9
+          path: nova/**/build/outputs/apk/debug/*.apk
